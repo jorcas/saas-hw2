@@ -1,13 +1,28 @@
 class MoviesController < ApplicationController
-
   def show
-    id = params[:id] # retrieve movie ID from URI route
-    @movie = Movie.find(id) # look up movie by unique ID
-    # will render app/views/movies/show.<extension> by default
+    if params.include?(:sort)
+      # will render app/views/movies/?sort=mode
+      redirect_to movies_path(:sort=>params[:sort])
+    else
+      id = params[:id] # retrieve movie ID from URI route
+      @movie = Movie.find(id) # look up movie by unique ID
+      # will render app/views/movies/show.<extension> by default
+    end
   end
 
   def index
-    @movies = Movie.all
+    @title_class = 'normal'
+    @release_class = 'normal'
+    if params.include?(:sort)
+      @movies = Movie.find(:all, :order=> params[:sort])
+      if params[:sort] == 'title' 
+        @title_class = 'hilite'
+      elsif params[:sort] == 'release_date' 
+        @release_class = 'hilite'
+      end
+    else
+      @movies = Movie.all
+    end
   end
 
   def new
