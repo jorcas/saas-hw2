@@ -1,8 +1,23 @@
 class MoviesController < ApplicationController
+  def initialize
+    @all_ratings = {'G'=>true, 'PG'=>true, 'PG-13'=>true, 'R'=>true}
+    super
+  end
+
   def show
     if params.include?(:sort)
+      if params.include?(:ratings)
+logger.debug('sort-ratings')
+logger.debug(params[:ratings])
+        ratings_h = Hash.new
+        params[:ratings].each do |key,v| 
+          if params[:ratings][key]=='true'; ratings_h[key] = '1' end
+        end
+      else
+        ratings_h = @all_ratings
+      end
       # will render app/views/movies/?sort=mode
-      redirect_to movies_path(:sort=>params[:sort])
+      redirect_to movies_path(:sort=>params[:sort], :ratings=>ratings_h)
     else
       id = params[:id] # retrieve movie ID from URI route
       @movie = Movie.find(id) # look up movie by unique ID
@@ -13,15 +28,30 @@ class MoviesController < ApplicationController
   def index
     @title_class = 'normal'
     @release_class = 'normal'
+    if params.include?(:ratings)
+      rating_list = params[:ratings].keys
+    else
+      rating_list = @all_ratings.keys
+    end
+    @all_ratings.each {|key,v| @all_ratings[key] = false }
+    rating_filter = ''
+    add_or_txt = false
+    rating_list.each do |rating|
+      if add_or_txt; rating_filter << ' or ' end
+      rating_filter << 'rating=' + '\'' + rating + '\''
+      add_or_txt = true
+      @all_ratings[rating] = true
+    end
+logger.debug(rating_filter)
     if params.include?(:sort)
-      @movies = Movie.find(:all, :order=> params[:sort])
+      @movies = Movie.find(:all, :order=> params[:sort], :conditions =>rating_filter)
       if params[:sort] == 'title' 
         @title_class = 'hilite'
       elsif params[:sort] == 'release_date' 
         @release_class = 'hilite'
       end
     else
-      @movies = Movie.all
+      @movies = Movie.find(:all, :conditions =>rating_filter)
     end
   end
 
@@ -52,5 +82,5 @@ class MoviesController < ApplicationController
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
   end
-
 end
+

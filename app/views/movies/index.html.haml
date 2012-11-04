@@ -2,12 +2,19 @@
 -#, 
 %h1 All Movies
 
+= form_tag movies_path, :id=>'ratings_form', :method => :get do
+  Include: 
+  - @all_ratings.each do |rating,value|
+    = rating
+    = check_box_tag "ratings[#{rating}]", 1, value
+  = submit_tag 'Refresh', :id=>'ratings_submit'
+
 %table#movies
   %thead
     %tr
-      %th{:class=>@title_class}= link_to 'Movie Title', movie_path(:all, :sort=>'title'), :id=>'title_header'
+      %th{:class=>@title_class}= link_to 'Movie Title', movie_path(:all, :sort=>'title', :ratings=>@all_ratings), :id=>'title_header'
       %th Rating
-      %th{:class=>@release_class}= link_to 'Release Date', movie_path(:all, :sort=>'release_date'), :id=>'release_date_header'
+      %th{:class=>@release_class}= link_to 'Release Date', movie_path(:all, :sort=>'release_date', :ratings=>@all_ratings), :id=>'release_date_header'
       %th More Info
   %tbody
     - @movies.each do |movie|
