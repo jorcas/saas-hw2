@@ -7,8 +7,6 @@ class MoviesController < ApplicationController
   def show
     if params.include?(:sort)
       if params.include?(:ratings)
-logger.debug('sort-ratings')
-logger.debug(params[:ratings])
         ratings_h = Hash.new
         params[:ratings].each do |key,v| 
           if params[:ratings][key]=='true'; ratings_h[key] = '1' end
@@ -42,7 +40,6 @@ logger.debug(params[:ratings])
       add_or_txt = true
       @all_ratings[rating] = true
     end
-logger.debug(rating_filter)
     if params.include?(:sort)
       @movies = Movie.find(:all, :order=> params[:sort], :conditions =>rating_filter)
       if params[:sort] == 'title' 
