@@ -1,7 +1,7 @@
 class MoviesController < ApplicationController
   def initialize
-    @all_ratings = {'G'=>true, 'PG'=>true, 'PG-13'=>true, 'R'=>true}
     super
+    @all_ratings = {'G'=>true, 'PG'=>true, 'PG-13'=>true, 'R'=>true}
   end
 
   def show
@@ -24,6 +24,12 @@ class MoviesController < ApplicationController
   end
 
   def index
+    if session.include?(:ratings)
+      @all_ratings = session[:ratings]
+    end
+    logger.debug('ratings-1:')
+    logger.debug(@all_ratings)
+
     @title_class = 'normal'
     @release_class = 'normal'
     if params.include?(:ratings)
@@ -40,6 +46,9 @@ class MoviesController < ApplicationController
       add_or_txt = true
       @all_ratings[rating] = true
     end
+    session[:ratings] = @all_ratings
+    logger.debug('ratings-2:')
+    logger.debug(@all_ratings)
     if params.include?(:sort)
       @movies = Movie.find(:all, :order=> params[:sort], :conditions =>rating_filter)
       if params[:sort] == 'title' 
