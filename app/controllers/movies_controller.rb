@@ -5,7 +5,8 @@ class MoviesController < ApplicationController
   end
 
   def show
-    if params.include?(:sort)
+    logger.debug "** show **"
+    if params.include?(:sort) or params.include?(:ratings)
       if params.include?(:ratings)
         ratings_h = Hash.new
         params[:ratings].each do |key,v| 
@@ -14,8 +15,13 @@ class MoviesController < ApplicationController
       else
         ratings_h = @all_ratings
       end
-      # will render app/views/movies/?sort=mode
-      redirect_to movies_path(:sort=>params[:sort], :ratings=>ratings_h)
+      if params.include?(:sort)
+        sort_h = params[:sort]
+      else
+        sort_h = {:sort=>'none'}
+      end
+      # will render app/views/movies/ + session set
+      redirect_to movies_path(:sort=>sort_h, :ratings=>ratings_h)
     else
       id = params[:id] # retrieve movie ID from URI route
       @movie = Movie.find(id) # look up movie by unique ID
@@ -24,19 +30,21 @@ class MoviesController < ApplicationController
   end
 
   def index
-    if session.include?(:ratings)
-      @all_ratings = session[:ratings]
-    end
-    logger.debug('ratings-1:')
-    logger.debug(@all_ratings)
+    logger.debug "** index **"
+    use_redirect = false
 
     @title_class = 'normal'
     @release_class = 'normal'
     if params.include?(:ratings)
       rating_list = params[:ratings].keys
+    elsif session.include?(:ratings)
+      logger.debug "** session have ratings"
+      rating_list = session[:ratings].reject{|k,v| v == false}.keys
+      use_redirect = true
     else
       rating_list = @all_ratings.keys
     end
+    logger.debug "** rating list: #{rating_list}"
     @all_ratings.each {|key,v| @all_ratings[key] = false }
     rating_filter = ''
     add_or_txt = false
@@ -47,17 +55,30 @@ class MoviesController < ApplicationController
       @all_ratings[rating] = true
     end
     session[:ratings] = @all_ratings
-    logger.debug('ratings-2:')
-    logger.debug(@all_ratings)
+    logger.debug "** ratings: #{@all_ratings}"
+
+    sort = 'none'
     if params.include?(:sort)
-      @movies = Movie.find(:all, :order=> params[:sort], :conditions =>rating_filter)
-      if params[:sort] == 'title' 
+      sort = params[:sort]
+    elsif session.include?(:sort)
+      sort = session[:sort]
+      use_redirect = true
+    end
+    session[:sort] = sort
+    logger.debug "** sorting: #{sort}"
+    if use_redirect
+      redirect_to movies_path(:sort=>sort, :ratings=>@all_ratings.reject{|k,v| v == false}) and return
+    end
+
+    if sort != 'none'
+      @movies = Movie.find(:all, :order=>sort, :conditions=>rating_filter)
+      if sort == 'title' 
         @title_class = 'hilite'
-      elsif params[:sort] == 'release_date' 
+      elsif sort == 'release_date' 
         @release_class = 'hilite'
       end
     else
-      @movies = Movie.find(:all, :conditions =>rating_filter)
+      @movies = Movie.find(:all, :conditions=>rating_filter)
     end
   end
 
